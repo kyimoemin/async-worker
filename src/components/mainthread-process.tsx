@@ -22,7 +22,7 @@ export function MainThreadProcess() {
   return (
     <section>
       <h3>Main thread process</h3>
-      <InputForm onSubmit={calculateNumber} />
+      <InputForm onSubmit={calculateNumber} loading={pending} />
       <p>
         <span>Fibonacci:</span>
         {pending ? "Calculating..." : value}

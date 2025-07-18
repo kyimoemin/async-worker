@@ -1,9 +1,15 @@
 import { useCallback, useState } from "react";
 
-export function InputForm({ onSubmit }: { onSubmit: (value: string) => void }) {
+export function InputForm({
+  onSubmit,
+  loading,
+}: {
+  onSubmit: (value: string) => void;
+  loading: boolean;
+}) {
   const [value, setValue] = useState("");
 
-  const handleSubmit = useCallback(
+  const handleSubmit: React.FormEventHandler<HTMLFormElement> = useCallback(
     (e) => {
       e.preventDefault();
       onSubmit(value);
@@ -18,7 +24,9 @@ export function InputForm({ onSubmit }: { onSubmit: (value: string) => void }) {
         value={value}
         onChange={(e) => setValue(e.target.value)}
       />
-      <button type="submit">Calculate</button>
+      <button type="submit" disabled={loading}>
+        Calculate
+      </button>
     </form>
   );
 }
