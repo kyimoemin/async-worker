@@ -1,4 +1,4 @@
-import { fibonacci } from "./fibonacci";
+import { fibonacci } from "../utils/fibonacci.ts";
 
 self.onmessage = (event) => {
   const num = event.data;

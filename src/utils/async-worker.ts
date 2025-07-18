@@ -1,10 +1,7 @@
-export function asynchronizeWorker(num: number): Promise<number> {
-  const worker = new Worker(
-    new URL("./fibonacci-worker.ts", import.meta.url).href,
-    {
-      type: "module",
-    }
-  );
+export function asynchronizeWorker(
+  worker: Worker,
+  num: number
+): Promise<number> {
   return new Promise((resolve, reject) => {
     worker.onmessage = (event) => {
       resolve(event.data);
@@ -12,6 +9,9 @@ export function asynchronizeWorker(num: number): Promise<number> {
     worker.onerror = (error) => {
       reject(error.message);
     };
+    worker.addEventListener("close", () => {
+      console.log("Worker has been terminated.");
+    });
     worker.postMessage(num);
   });
 }
