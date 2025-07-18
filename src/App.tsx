@@ -1,7 +1,12 @@
 import "./App.css";
+import { MainThreadProcess } from "./components/mainthread-process";
 
 function App() {
-  return <main>hello world</main>;
+  return (
+    <main>
+      <MainThreadProcess />
+    </main>
+  );
 }
 
 export default App;
