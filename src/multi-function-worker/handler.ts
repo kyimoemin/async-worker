@@ -32,8 +32,11 @@ export class AsyncCallHandler<T extends WorkerObject> {
   private calls = new Map<string, Calls>();
   private worker: Worker;
 
+  private readonly workerURL: URL;
+
   constructor(workerURL: URL) {
-    this.worker = new Worker(workerURL, { type: "module" });
+    this.workerURL = workerURL;
+    this.worker = this.spawnWorker();
     this.worker.onmessage = (event) => {
       const { id, result, error } = event.data as ResponsePayload<any>;
       const call = this.calls.get(id);
@@ -54,6 +57,10 @@ export class AsyncCallHandler<T extends WorkerObject> {
     this.worker.addEventListener("exit", this.cleanup);
     this.worker.addEventListener("close", this.cleanup);
   }
+
+  private spawnWorker = () => {
+    return new Worker(this.workerURL, { type: "module" });
+  };
 
   private cleanup = () => {
     console.log("Cleaning up worker calls");
