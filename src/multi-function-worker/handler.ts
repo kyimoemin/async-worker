@@ -4,6 +4,7 @@ import type { ResponsePayload } from "../type";
 type Calls = {
   resolve: (result?: any) => void;
   reject: (error: Error) => void;
+  timeoutId?: ReturnType<typeof setTimeout>;
 };
 
 /**
@@ -19,13 +20,16 @@ export class AsyncCallHandler {
     this.worker = worker;
     this.worker.onmessage = (event) => {
       const { id, result, error } = event.data as ResponsePayload<any>;
+      const call = this.calls.get(id);
+      if (!call) return;
+      if (call.timeoutId) clearTimeout(call.timeoutId);
       if (error) {
         const e = new Error(error.message, { cause: error.cause });
         if (error.name) e.name = error.name;
         if (error.stack) e.stack = error.stack;
-        this.calls.get(id)?.reject(e);
+        call.reject(e);
       } else {
-        this.calls.get(id)?.resolve(result);
+        call.resolve(result);
       }
       this.calls.delete(id);
     };
@@ -43,12 +47,29 @@ export class AsyncCallHandler {
     this.calls.clear();
   };
 
-  call<Func extends (...args: any[]) => any>(func: string) {
+  /**
+   * Calls a function in the worker with optional timeout.
+   * @param func Function name in the worker
+   * @param timeoutMs Optional timeout in milliseconds
+   */
+  call = <Func extends (...args: any[]) => any>(
+    func: string,
+    timeoutMs?: number
+  ) => {
     return (...args: Parameters<Func>) =>
       new Promise<ReturnType<Func>>((resolve, reject) => {
         const id = v4();
-        this.calls.set(id, { resolve, reject });
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
+        if (timeoutMs && timeoutMs > 0) {
+          timeoutId = setTimeout(() => {
+            this.calls
+              .get(id)
+              ?.reject(new Error(`Worker call timed out after ${timeoutMs}ms`));
+            this.calls.delete(id);
+          }, timeoutMs);
+        }
+        this.calls.set(id, { resolve, reject, timeoutId });
         this.worker.postMessage({ func, args, id });
       });
-  }
+  };
 }
