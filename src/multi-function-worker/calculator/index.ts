@@ -13,5 +13,5 @@ export const calculator = {
   multiply: (a: number, b: number) => handler.func("multiply")(a, b),
   divide: (a: number, b: number) => handler.func("divide")(a, b),
   modulus: (a: number, b: number) => handler.func("modulus")(a, b),
-  fibonacci: (n: number) => handler.func("fibonacci")(n, 500),
+  fibonacci: (n: number) => handler.func("fibonacci")(n),
 };
