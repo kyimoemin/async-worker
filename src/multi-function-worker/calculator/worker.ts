@@ -1,5 +1,5 @@
 import { fibonacci } from "../../utils/fibonacci";
-import { initWorker } from "../handler";
+import { initWorker } from "../initWorker";
 
 const add = (a: number, b: number) => a + b;
 

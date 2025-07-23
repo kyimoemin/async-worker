@@ -7,5 +7,12 @@ export type RequestPayload<Params extends unknown[]> = {
 export type ResponsePayload<R = void> = {
   id: string;
   result?: R;
-  error?: Error;
+  error?: ErrorPayload;
+};
+
+export type ErrorPayload = {
+  message: string;
+  stack?: string;
+  name: string;
+  cause?: unknown; // Optional, if available
 };
