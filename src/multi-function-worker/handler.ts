@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { v4 } from "uuid";
-import type { ResponsePayload } from "../type";
+import type { RequestPayload, ResponsePayload } from "../type";
 type Calls = {
   resolve: (result?: any) => void;
   reject: (error: Error) => void;
@@ -32,3 +32,26 @@ export class AsyncCallHandler {
       });
   }
 }
+
+/**
+ *
+ * @param obj Object containing functions to be called in the worker.
+ */
+export const initWorker = <
+  T extends Record<string | number | symbol, (...args: any[]) => any>
+>(
+  obj: T
+) => {
+  self.onmessage = (event) => {
+    const { func, args, id } = event.data as RequestPayload<
+      Parameters<T[keyof T]>
+    >;
+    try {
+      const result = obj[func](...args);
+      self.postMessage({ id, result });
+    } catch (error: unknown) {
+      const response: ResponsePayload = { id, error: error as Error };
+      self.postMessage(response);
+    }
+  };
+};

@@ -1,5 +1,5 @@
-export type RequestPayload<Funcs extends string, Params extends unknown[]> = {
-  func: Funcs;
+export type RequestPayload<Params extends unknown[]> = {
+  func: string | number | symbol;
   args: Params;
   id: string;
 };

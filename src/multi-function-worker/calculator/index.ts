@@ -1,7 +1,7 @@
 import { AsyncCallHandler } from "../handler";
 import type { Calculator } from "./module";
 
-const worker = new Worker(new URL("./module.ts", import.meta.url), {
+const worker = new Worker(new URL("./worker.ts", import.meta.url), {
   type: "module",
 });
 
