@@ -9,3 +9,5 @@
 - [x] Clean up: If the worker is terminated, reject all pending promises to avoid memory leaks.
 
 - [ ] Type safety: The current use of `any` is pragmatic, but you could further tighten types for better safety.
+
+- [ ]
