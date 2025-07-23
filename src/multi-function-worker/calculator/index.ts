@@ -1,4 +1,5 @@
 import { AsyncCallHandler } from "../handler";
+import type { Calculator } from "./module";
 
 const worker = new Worker(new URL("./module.ts", import.meta.url), {
   type: "module",
@@ -7,13 +8,13 @@ const worker = new Worker(new URL("./module.ts", import.meta.url), {
 const handler = new AsyncCallHandler(worker);
 
 export const calculator = {
-  add: (a: number, b: number) => handler.call({ func: "add", args: [a, b] }),
+  add: (a: number, b: number) => handler.call<Calculator["add"]>("add")(a, b),
   subtract: (a: number, b: number) =>
-    handler.call({ func: "subtract", args: [a, b] }),
+    handler.call<Calculator["subtract"]>("subtract")(a, b),
   multiply: (a: number, b: number) =>
-    handler.call({ func: "multiply", args: [a, b] }),
+    handler.call<Calculator["multiply"]>("multiply")(a, b),
   divide: (a: number, b: number) =>
-    handler.call({ func: "divide", args: [a, b] }),
+    handler.call<Calculator["divide"]>("divide")(a, b),
   modulus: (a: number, b: number) =>
-    handler.call({ func: "modulus", args: [a, b] }),
+    handler.call<Calculator["modulus"]>("modulus")(a, b),
 };

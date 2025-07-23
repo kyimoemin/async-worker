@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { v4 } from "uuid";
-import type { RequestPayload, ResponsePayload } from "../type";
+import type { ResponsePayload } from "../type";
 type Calls = {
   resolve: (result?: any) => void;
   reject: (error: Error) => void;
@@ -22,13 +23,12 @@ export class AsyncCallHandler {
     };
   }
 
-  call<Func extends string, Args extends unknown[], R = void>(
-    payload: Omit<RequestPayload<Func, Args>, "id">
-  ): Promise<R> {
-    return new Promise((resolve, reject) => {
-      const id = v4();
-      this.calls.set(id, { resolve, reject });
-      this.worker.postMessage({ ...payload, id });
-    });
+  call<Func extends (...args: any[]) => any>(func: string) {
+    return (...args: Parameters<Func>) =>
+      new Promise<ReturnType<Func>>((resolve, reject) => {
+        const id = v4();
+        this.calls.set(id, { resolve, reject });
+        this.worker.postMessage({ func, args, id });
+      });
   }
 }
