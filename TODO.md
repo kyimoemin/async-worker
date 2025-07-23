@@ -10,4 +10,4 @@
 
 - [ ] Type safety: The current use of `any` is pragmatic, but you could further tighten types for better safety.
 
-- [ ]
+- [ ] add spawn worker

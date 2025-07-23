@@ -9,16 +9,31 @@ type Calls = {
 };
 
 /**
- * Handles asynchronous calls to a Web Worker.
- * It manages the communication between the main thread and the worker,
- * allowing functions to be called in the worker and returning results or errors.
+ * A generic handler for making asynchronous function calls to a Web Worker.
+ *
+ * This class manages communication between the main thread and a worker, allowing you to call worker-exposed functions as Promises.
+ * It handles message passing, result/error propagation, timeouts, and worker cleanup.
+ *
+ * @template T - The type describing the functions exposed by the worker (should extend WorkerObject).
+ *
+ * @example
+ *
+ * ```typescript
+ * // Suppose your worker exposes an 'add' function:
+ * type MyWorker = { add: (a: number, b: number) => number };
+ * const handler = new AsyncCallHandler<MyWorker>(workerUrl);
+ * const add = handler.func('add');
+ * const result = await add(1, 2); // result is 3
+ * ```
+ * @see func for calling worker functions
+ * @see terminate for cleanup
  */
 export class AsyncCallHandler<T extends WorkerObject> {
   private calls = new Map<string, Calls>();
   private worker: Worker;
 
-  constructor(worker: Worker) {
-    this.worker = worker;
+  constructor(workerURL: URL) {
+    this.worker = new Worker(workerURL, { type: "module" });
     this.worker.onmessage = (event) => {
       const { id, result, error } = event.data as ResponsePayload<any>;
       const call = this.calls.get(id);
@@ -41,6 +56,7 @@ export class AsyncCallHandler<T extends WorkerObject> {
   }
 
   private cleanup = () => {
+    console.log("Cleaning up worker calls");
     const error = new Error("Worker was terminated or encountered an error.");
     for (const { reject } of this.calls.values()) {
       reject(error);
@@ -49,11 +65,18 @@ export class AsyncCallHandler<T extends WorkerObject> {
   };
 
   /**
-   * Calls a function in the worker with optional timeout.
-   * @param funcName Function name in the worker
-   * @param timeoutMs Optional timeout in milliseconds
+   * Returns a function that calls a method in the worker asynchronously with optional timeout.
+   *
+   * @template K - The key of the function in the worker object.
+   * @param funcName - The name of the function to call in the worker.
+   * @param timeoutMs - Optional timeout in milliseconds (default: 5000ms).
+   * @returns A function that, when called with arguments, returns a Promise resolving to the result of the worker function.
+   *
+   * @example
+   * const add = handler.func('add');
+   * const result = await add(1, 2);
    */
-  func = <K extends keyof T>(funcName: K, timeoutMs?: number) => {
+  func = <K extends keyof T>(funcName: K, timeoutMs: number = 5000) => {
     return (...args: Parameters<T[K]>) =>
       new Promise<ReturnType<T[K]>>((resolve, reject) => {
         const id = v4();

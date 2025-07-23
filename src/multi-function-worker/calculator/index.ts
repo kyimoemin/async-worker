@@ -1,11 +1,9 @@
 import { AsyncCallHandler } from "../handler";
 import type { Calculator } from "./worker";
 
-const worker = new Worker(new URL("./worker.ts", import.meta.url), {
-  type: "module",
-});
+const workerURL = new URL("./worker.ts", import.meta.url);
 
-const handler = new AsyncCallHandler<Calculator>(worker);
+const handler = new AsyncCallHandler<Calculator>(workerURL);
 
 export const calculator = {
   add: handler.func("add"),
