@@ -53,9 +53,9 @@ export class AsyncCallHandler<T extends WorkerObject> {
    * @param funcName Function name in the worker
    * @param timeoutMs Optional timeout in milliseconds
    */
-  func = (funcName: keyof T, timeoutMs?: number) => {
-    return (...args: Parameters<T[typeof funcName]>) =>
-      new Promise<ReturnType<T[typeof funcName]>>((resolve, reject) => {
+  func = <K extends keyof T>(funcName: K, timeoutMs?: number) => {
+    return (...args: Parameters<T[K]>) =>
+      new Promise<ReturnType<T[K]>>((resolve, reject) => {
         const id = v4();
         let timeoutId: ReturnType<typeof setTimeout> | undefined;
         if (timeoutMs && timeoutMs > 0) {
