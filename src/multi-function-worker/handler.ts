@@ -6,6 +6,11 @@ type Calls = {
   reject: (error: Error) => void;
 };
 
+/**
+ * Handles asynchronous calls to a Web Worker.
+ * It manages the communication between the main thread and the worker,
+ * allowing functions to be called in the worker and returning results or errors.
+ */
 export class AsyncCallHandler {
   calls = new Map<string, Calls>();
   worker: Worker;
