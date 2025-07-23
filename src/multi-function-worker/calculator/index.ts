@@ -1,5 +1,5 @@
 import { AsyncCallHandler } from "../handler";
-import type { Calculator } from "./module";
+import type { Calculator } from "./worker";
 
 const worker = new Worker(new URL("./worker.ts", import.meta.url), {
   type: "module",
@@ -17,4 +17,6 @@ export const calculator = {
     handler.call<Calculator["divide"]>("divide")(a, b),
   modulus: (a: number, b: number) =>
     handler.call<Calculator["modulus"]>("modulus")(a, b),
+  fibonacci: (n: number) =>
+    handler.call<Calculator["fibonacci"]>("fibonacci")(n),
 };

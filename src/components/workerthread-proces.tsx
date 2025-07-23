@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { InputForm } from "./input-form";
-import { asyncWorkerFibonacci } from "../workers/fibonacci";
+import { asyncWorkerFibonacci } from "../single-function-worker/fibonacci";
 
 export function WorkerThreadProcess() {
   const [value, setValue] = useState<string>("");
