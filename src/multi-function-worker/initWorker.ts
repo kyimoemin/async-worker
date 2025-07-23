@@ -9,21 +9,26 @@ export const initWorker = <
 >(
   obj: T
 ) => {
-  self.onmessage = (event) => {
+  self.onmessage = async (event) => {
     const { func, args, id } = event.data as RequestPayload<
       Parameters<T[keyof T]>
     >;
     try {
-      const result = obj[func](...args);
+      if (typeof obj[func] !== "function") {
+        throw new Error(`Function '${String(func)}' not found in worker.`);
+      }
+      const result = await obj[func](...args);
       self.postMessage({ id, result });
     } catch (error) {
+      const err = error as Error;
       const response: ResponsePayload = {
         id,
         error: {
-          message: (error as Error)?.message,
-          stack: (error as Error)?.stack,
-          name: (error as Error)?.name,
-          cause: (error as Error)?.cause, // Optional, if available
+          message: err?.message,
+          stack: err?.stack,
+          name: err?.name,
+          // Only include cause if it's a string or primitive
+          cause: typeof err?.cause === "string" ? err.cause : undefined,
         },
       };
       self.postMessage(response);

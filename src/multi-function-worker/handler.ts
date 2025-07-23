@@ -72,4 +72,15 @@ export class AsyncCallHandler {
         this.worker.postMessage({ func, args, id });
       });
   };
+  /**
+   * Terminates the worker and cleans up all pending calls.
+   * This method removes all event listeners and clears the calls map.
+   * It should be called when the worker is no longer needed to prevent memory leaks.
+   */
+  terminate = () => {
+    this.worker.removeEventListener("error", this.cleanup);
+    this.worker.removeEventListener("exit", this.cleanup);
+    this.worker.removeEventListener("close", this.cleanup);
+    this.worker.terminate();
+  };
 }
