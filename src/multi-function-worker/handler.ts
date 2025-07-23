@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { v4 } from "uuid";
 import type { ResponsePayload } from "../type";
+import type { WorkerObject } from "./initWorker";
 type Calls = {
   resolve: (result?: any) => void;
   reject: (error: Error) => void;
@@ -12,9 +13,9 @@ type Calls = {
  * It manages the communication between the main thread and the worker,
  * allowing functions to be called in the worker and returning results or errors.
  */
-export class AsyncCallHandler {
-  calls = new Map<string, Calls>();
-  worker: Worker;
+export class AsyncCallHandler<T extends WorkerObject> {
+  private calls = new Map<string, Calls>();
+  private worker: Worker;
 
   constructor(worker: Worker) {
     this.worker = worker;
@@ -39,7 +40,7 @@ export class AsyncCallHandler {
     this.worker.addEventListener("close", this.cleanup);
   }
 
-  cleanup = () => {
+  private cleanup = () => {
     const error = new Error("Worker was terminated or encountered an error.");
     for (const { reject } of this.calls.values()) {
       reject(error);
@@ -49,15 +50,12 @@ export class AsyncCallHandler {
 
   /**
    * Calls a function in the worker with optional timeout.
-   * @param func Function name in the worker
+   * @param funcName Function name in the worker
    * @param timeoutMs Optional timeout in milliseconds
    */
-  call = <Func extends (...args: any[]) => any>(
-    func: string,
-    timeoutMs?: number
-  ) => {
-    return (...args: Parameters<Func>) =>
-      new Promise<ReturnType<Func>>((resolve, reject) => {
+  func = (funcName: keyof T, timeoutMs?: number) => {
+    return (...args: Parameters<T[typeof funcName]>) =>
+      new Promise<ReturnType<T[typeof funcName]>>((resolve, reject) => {
         const id = v4();
         let timeoutId: ReturnType<typeof setTimeout> | undefined;
         if (timeoutMs && timeoutMs > 0) {
@@ -69,7 +67,7 @@ export class AsyncCallHandler {
           }, timeoutMs);
         }
         this.calls.set(id, { resolve, reject, timeoutId });
-        this.worker.postMessage({ func, args, id });
+        this.worker.postMessage({ func: funcName, args, id });
       });
   };
   /**

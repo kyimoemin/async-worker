@@ -1,14 +1,15 @@
 import type { RequestPayload, ResponsePayload } from "../type";
 
+export type WorkerObject = Record<
+  string | number | symbol,
+  (...args: any[]) => any
+>;
+
 /**
  *
  * @param obj Object containing functions to be called in the worker.
  */
-export const initWorker = <
-  T extends Record<string | number | symbol, (...args: any[]) => any>
->(
-  obj: T
-) => {
+export const initWorker = <T extends WorkerObject>(obj: T) => {
   self.onmessage = async (event) => {
     const { func, args, id } = event.data as RequestPayload<
       Parameters<T[keyof T]>
