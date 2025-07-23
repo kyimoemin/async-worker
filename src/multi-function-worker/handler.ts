@@ -81,6 +81,7 @@ export class AsyncCallHandler {
     this.worker.removeEventListener("error", this.cleanup);
     this.worker.removeEventListener("exit", this.cleanup);
     this.worker.removeEventListener("close", this.cleanup);
+    this.cleanup();
     this.worker.terminate();
   };
 }
