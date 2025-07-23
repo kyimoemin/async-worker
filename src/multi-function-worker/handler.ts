@@ -29,7 +29,19 @@ export class AsyncCallHandler {
       }
       this.calls.delete(id);
     };
+
+    this.worker.addEventListener("error", this.cleanup);
+    this.worker.addEventListener("exit", this.cleanup);
+    this.worker.addEventListener("close", this.cleanup);
   }
+
+  cleanup = () => {
+    const error = new Error("Worker was terminated or encountered an error.");
+    for (const { reject } of this.calls.values()) {
+      reject(error);
+    }
+    this.calls.clear();
+  };
 
   call<Func extends (...args: any[]) => any>(func: string) {
     return (...args: Parameters<Func>) =>
