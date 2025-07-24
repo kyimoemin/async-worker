@@ -1,9 +1,11 @@
 export class WorkerManager {
+  public readonly MAX_NON_BUSY_WORKERS: number;
   private workers: Array<WorkerInfo> = [];
   private readonly workerURL: URL;
 
-  constructor(workerURL: URL) {
+  constructor(workerURL: URL, maxNonBusyWorkers: number = 5) {
     this.workerURL = workerURL;
+    this.MAX_NON_BUSY_WORKERS = maxNonBusyWorkers;
   }
 
   private spawnWorker = () => {
@@ -13,9 +15,22 @@ export class WorkerManager {
   };
 
   getWorker = () => {
+    this.removeNonBusyWorkers();
     const availableWorker = this.workers.find((workerInfo) => !workerInfo.busy);
     if (availableWorker) return availableWorker.worker;
     return this.spawnWorker();
+  };
+
+  private removeNonBusyWorkers = () => {
+    const nonBusyWorkers = this.workers.filter(
+      (workerInfo) => !workerInfo.busy
+    );
+    if (nonBusyWorkers.length <= this.MAX_NON_BUSY_WORKERS) return;
+    const excessWorkers = nonBusyWorkers.slice(this.MAX_NON_BUSY_WORKERS);
+    for (const workerInfo of excessWorkers) {
+      workerInfo.worker.terminate();
+      this.workers.splice(this.workers.indexOf(workerInfo), 1);
+    }
   };
 
   terminateWorker = (worker: Worker) => {
