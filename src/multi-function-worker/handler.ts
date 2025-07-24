@@ -2,11 +2,7 @@
 import { v4 } from "uuid";
 import type { ResponsePayload } from "../type";
 import type { WorkerObject } from "./initWorker";
-type Calls = {
-  resolve: (result?: any) => void;
-  reject: (error: Error) => void;
-  timeoutId?: ReturnType<typeof setTimeout>;
-};
+import { WorkerInfo, WorkerManager } from "./workerManager";
 
 /**
  * A generic handler for making asynchronous function calls to a Web Worker.
@@ -29,47 +25,37 @@ type Calls = {
  * @see terminate for cleanup
  */
 export class AsyncCallHandler<T extends WorkerObject> {
-  private calls = new Map<string, Calls>();
-  private worker: Worker;
-
-  private readonly workerURL: URL;
+  private workerManager: WorkerManager;
 
   constructor(workerURL: URL) {
-    this.workerURL = workerURL;
-    this.worker = this.spawnWorker();
-    this.worker.onmessage = (event) => {
-      const { id, result, error } = event.data as ResponsePayload<any>;
-      const call = this.calls.get(id);
-      if (!call) return;
-      if (call.timeoutId) clearTimeout(call.timeoutId);
+    this.workerManager = new WorkerManager(workerURL);
+  }
+
+  private messageListener =
+    ({
+      workerInfo,
+      resolve,
+      reject,
+      timeoutId,
+    }: {
+      workerInfo: WorkerInfo;
+      resolve: (result: any) => any;
+      reject: (error: Error) => any;
+      timeoutId?: ReturnType<typeof setTimeout>;
+    }) =>
+    (event: MessageEvent<ResponsePayload<any>>) => {
+      const { result, error } = event.data as ResponsePayload<any>;
       if (error) {
         const e = new Error(error.message, { cause: error.cause });
         if (error.name) e.name = error.name;
         if (error.stack) e.stack = error.stack;
-        call.reject(e);
+        reject(e);
       } else {
-        call.resolve(result);
+        resolve(result);
       }
-      this.calls.delete(id);
+      workerInfo.busy = false;
+      clearTimeout(timeoutId);
     };
-
-    this.worker.addEventListener("error", this.cleanup);
-    this.worker.addEventListener("exit", this.cleanup);
-    this.worker.addEventListener("close", this.cleanup);
-  }
-
-  private spawnWorker = () => {
-    return new Worker(this.workerURL, { type: "module" });
-  };
-
-  private cleanup = () => {
-    console.log("Cleaning up worker calls");
-    const error = new Error("Worker was terminated or encountered an error.");
-    for (const { reject } of this.calls.values()) {
-      reject(error);
-    }
-    this.calls.clear();
-  };
 
   /**
    * Returns a function that calls a method in the worker asynchronously with optional timeout.
@@ -87,17 +73,26 @@ export class AsyncCallHandler<T extends WorkerObject> {
     return (...args: Parameters<T[K]>) =>
       new Promise<ReturnType<T[K]>>((resolve, reject) => {
         const id = v4();
+
+        const workerInfo = this.workerManager.getWorker();
+
         let timeoutId: ReturnType<typeof setTimeout> | undefined;
         if (timeoutMs && timeoutMs > 0) {
           timeoutId = setTimeout(() => {
-            this.calls
-              .get(id)
-              ?.reject(new Error(`Worker call timed out after ${timeoutMs}ms`));
-            this.calls.delete(id);
+            reject(new Error(`Worker call timed out after ${timeoutMs}ms`));
+            this.workerManager.terminateWorker(workerInfo.worker);
           }, timeoutMs);
         }
-        this.calls.set(id, { resolve, reject, timeoutId });
-        this.worker.postMessage({ func: funcName, args, id });
+
+        workerInfo.worker.onmessage = this.messageListener({
+          workerInfo,
+          resolve,
+          reject,
+          timeoutId,
+        });
+        workerInfo.worker.onerror = reject;
+        workerInfo.busy = true;
+        workerInfo.worker.postMessage({ func: funcName, args, id });
       });
   };
   /**
@@ -106,10 +101,6 @@ export class AsyncCallHandler<T extends WorkerObject> {
    * It should be called when the worker is no longer needed to prevent memory leaks.
    */
   terminate = () => {
-    this.worker.removeEventListener("error", this.cleanup);
-    this.worker.removeEventListener("exit", this.cleanup);
-    this.worker.removeEventListener("close", this.cleanup);
-    this.cleanup();
-    this.worker.terminate();
+    this.workerManager.cleanup();
   };
 }
