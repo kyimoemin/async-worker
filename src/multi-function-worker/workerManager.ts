@@ -46,23 +46,24 @@ export class WorkerManager {
 
   /**
    * Spawns a new Worker and adds it to the pool.
-   * @returns The newly created Worker instance.
+   * @returns The newly created WorkerInfo instance.
    */
   private spawnWorker = () => {
     const worker = new Worker(this.workerURL, { type: "module" });
-    this.workers.set(worker, new WorkerInfo(worker));
-    return worker;
+    const workerInfo = new WorkerInfo(worker);
+    this.workers.set(worker, workerInfo);
+    return workerInfo;
   };
 
   /**
    * Retrieves an available non-busy Worker from the pool, or spawns a new one if none are available.
    * Also removes excess non-busy workers.
-   * @returns An available Worker instance.
+   * @returns An available WorkerInfo instance.
    */
   getWorker = () => {
     this.removeNonBusyWorkers();
     for (const workerInfo of this.workers.values()) {
-      if (!workerInfo.busy) return workerInfo.worker;
+      if (!workerInfo.busy) return workerInfo;
     }
     return this.spawnWorker();
   };
@@ -109,7 +110,7 @@ export class WorkerManager {
   };
 }
 
-class WorkerInfo {
+export class WorkerInfo {
   public readonly worker: Worker;
 
   busy: boolean;
