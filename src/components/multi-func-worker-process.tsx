@@ -67,7 +67,7 @@ export function MultiFuncWorkerThreadProcess() {
           setValue(result.toString());
         }}
       >
-        !
+        φ
       </button>
       <p>
         <span>Result:</span>
