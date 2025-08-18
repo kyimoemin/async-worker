@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { calculator } from "../multi-function-worker/calculator";
+import { calculator } from "../lib-worker/index";
 
 export function MultiFuncWorkerThreadProcess() {
   const [value, setValue] = useState<string>("");
