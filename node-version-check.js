@@ -1,4 +1,4 @@
-const requiredMinVersion = [22, 12];
+const requiredMinVersion = [20, 0];
 const currentNodeVersion = process.versions.node;
 const [major, minor] = currentNodeVersion.split(".");
 
