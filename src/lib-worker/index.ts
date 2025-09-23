@@ -1,4 +1,4 @@
-import { ElasticWorker } from "async-multi-worker";
+import { ElasticWorker } from "elastic-worker";
 import { Calculator } from "./worker";
 
 const url = new URL("./worker.ts", import.meta.url);
